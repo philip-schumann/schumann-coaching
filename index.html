@@ -852,7 +852,7 @@ select.inp{cursor:pointer;}
     <div class="submit-wrap">
       <button class="btn-submit" id="submit-btn" onclick="submitForm()">📨 Analysesheet an Philip abschicken</button>
       <div class="submit-note">
-        Nach dem Absenden erhält Philip deine Antworten direkt per E-Mail.
+        Nach dem Absenden werden deine Antworten direkt an Philip übermittelt.
       </div>
     </div>
   </div>
@@ -1037,41 +1037,31 @@ function collectData(){
 }
 
 function submitForm(){
-  var FORMSPREE_ID='mojrvobn'; // <-- ersetze durch deine Formspree-ID
-
-  if(FORMSPREE_ID==='DEINE_FORMSPREE_ID'){
-    alert('⚠️ Formspree-ID fehlt!\n\nSo geht\'s:\n1. Gehe zu formspree.io und erstelle einen kostenlosen Account\n2. Erstelle ein neues Formular\n3. Kopiere deine ID (z.B. "xpzgkwvr")\n4. Ersetze "DEINE_FORMSPREE_ID" im HTML mit deiner ID\n\nDas dauert nur 2 Minuten!');
-    return;
-  }
+  var SCRIPT_URL='https://script.google.com/macros/s/AKfycbyPMmFsrt3WRjAgC5wp0-k2PzeQMAQ1MEwVIPCvAogAtLsLzyYfOEiQtuRmpvUOtuFY/exec';
 
   var btn=document.getElementById('submit-btn');
   btn.textContent='⏳ Wird gesendet …';
   btn.disabled=true;
 
   var data=collectData();
-  // Signatures are large – send as separate hidden text (base64 truncated for email)
-  var payload=Object.assign({},data);
-  delete payload['unterschrift_sig-commit'];
-  delete payload['unterschrift_sig-official'];
-  payload['_subject']='Neues Onboarding Analysesheet – Schumann Coaching';
+  // Remove large signature data
+  delete data['unterschrift_sig-commit'];
+  delete data['unterschrift_sig-official'];
+  // Add timestamp
+  data['datum'] = new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  data['status'] = 'Neu';
 
-  fetch('https://formspree.io/f/'+FORMSPREE_ID,{
+  fetch(SCRIPT_URL,{
     method:'POST',
-    headers:{'Content-Type':'application/json','Accept':'application/json'},
-    body:JSON.stringify(payload)
+    mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(data)
   })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    if(d.ok||d.next){
-      document.getElementById('form-success').classList.add('show');
-      btn.style.display='none';
-      document.querySelector('.submit-note').style.display='none';
-      window.scrollTo({top:document.getElementById('form-success').offsetTop-100,behavior:'smooth'});
-    }else{
-      btn.textContent='📨 Analysesheet an Philip abschicken';
-      btn.disabled=false;
-      alert('Fehler beim Senden. Bitte prüfe die Formspree-ID oder kontaktiere Philip direkt.');
-    }
+  .then(function(){
+    document.getElementById('form-success').classList.add('show');
+    btn.style.display='none';
+    document.querySelector('.submit-note').style.display='none';
+    window.scrollTo({top:document.getElementById('form-success').offsetTop-100,behavior:'smooth'});
   })
   .catch(function(){
     btn.textContent='📨 Analysesheet an Philip abschicken';
